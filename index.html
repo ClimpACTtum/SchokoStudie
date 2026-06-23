@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chocolate Shopping Game</title>
+    <style>
+        :root {
+            --primary: #2E7D32;
+            --primary-dark: #1B5E20;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --text: #212529;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 15px; display: flex; justify-content: center; }
+        .container { max-width: 900px; width: 100%; background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        
+        .header-status { display: flex; justify-content: space-between; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; }
+        .budget-bar { width: 100%; height: 16px; background: #e9ecef; border-radius: 10px; margin-bottom: 25px; overflow: hidden; border: 1px solid #dee2e6; }
+        .budget-fill { height: 100%; background: #4CAF50; width: 100%; transition: width 0.3s ease; }
+        .budget-low { background: #dc3545; }
+
+        .hidden { display: none; }
+        h1 { margin-bottom: 20px; color: #111; text-align: center; font-size: 1.8em; }
+        h2 { margin-bottom: 20px; color: #333; text-align: center; font-size: 1.5em; }
+        p { line-height: 1.6; margin-bottom: 25px; color: #495057; }
+        blockquote { background: #fff3cd; border-left: 5px solid #ffc107; padding: 15px; margin-bottom: 25px; border-radius: 4px; }
+        
+        button { background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1em; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        button:hover { background: var(--primary-dark); }
+        button:disabled { background: #ced4da; color: #6c757d; cursor: not-allowed; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        @media(min-width: 750px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+        .option-card { border: 2px solid #dee2e6; border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.2s; background: #fff; position: relative; display: flex; flex-direction: column; }
+        .option-card:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+        .option-card.selected { border-color: var(--primary); background-color: #f1f8e9; box-shadow: 0 0 0 2px var(--primary); }
+        
+        .option-letter { position: absolute; top: 12px; left: 12px; font-weight: bold; background: rgba(255,255,255,0.9); width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.9em; box-shadow: 0 2px 5px rgba(0,0,0,0.15); z-index: 2; }
+        
+        .product-img { width: 100%; height: 300px; object-fit: cover; object-position: center; border-bottom: 1px solid #dee2e6; }
+        .card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; text-align: center; }
+        .price { font-size: 1.5em; font-weight: bold; margin-bottom: 12px; color: #000; }
+        
+        .labels-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; min-height: 60px; align-items: center; }
+        
+        .skip-container { margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; text-align: center; }
+        .skip-btn { background: #6c757d; }
+        .skip-btn:hover { background: #5a6268; }
+        .skip-btn.selected { background: #dc3545; }
+        .reason-box { margin-top: 15px; width: 100%; height: 80px; padding: 10px; border-radius: 6px; border: 1px solid #ced4da; resize: none; font-size: 0.95em; }
+
+        .nav-actions { display: flex; justify-content: space-between; margin-top: 20px; }
+        
+        /* Survey Styling - Hier im Container integriert */
+        .survey-container { width: 100%; margin-top: 20px; }
+        .subtitle { text-align: center; margin-bottom: 25px; color: #555; }
+        .survey-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+        .survey-card h3 { margin-bottom: 10px; }
+        .options-row { display: flex; flex-wrap: wrap; gap: 12px; }
+        .options-row label { background: #f6f6f6; padding: 6px 10px; border-radius: 8px; cursor: pointer; }
+        input, select, textarea { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; margin-top: 6px; }
+        .sub-box { margin-top: 10px; padding: 10px; background: #fafafa; border-radius: 8px; font-size: 0.9em; }
+        .hint { font-size: 0.9em; color: #666; margin-bottom: 10px; }
+        .survey-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .survey-table th, .survey-table td { border: 1px solid #ddd; padding: 8px; }
+        .survey-footer { text-align: center; margin-top: 20px; }
+
+	.badge-img { 
+    height: 50px; 
+    width: auto; 
+    display: block; 
+    margin-bottom: 5px; 
+}
+
+/* Styling für das Fullscreen-Bild */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    cursor: zoom-out;
+}
+.modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%;
+    max-height: 90%;
+    margin-top: 5%;
+}
+    </style>
+</head>
+<body>
+
+
+
+    <div id="intro-screen"> <h1>Choose Your Chocolate 🍫</h1> <p>Welcome! Imagine you are shopping for a bar of chocolate and need to choose which one you would buy. In each round, you will see several chocolate options. Please select the option you would realistically buy. <blockquote> <strong>Important Note:</strong> Important Note: All chocolate products shown are dark chocolate (naturally vegan and lower in sugar). If you have personal restrictions or do not usually eat dark chocolate, please <strong>still select an option</strong> by imagining it represents a suitable alternative (e.g., your favorite chocolate) or that you are buying it for a friend. </blockquote> <p>If you absolutely do not want any version of the product, you can select "I don't want to buy any of these options" and provide a brief explanation.</p> <p>There are no right or wrong answers. We are interested in your personal preferences and purchasing decisions.</p> <div style="text-align: center; margin-top: 30px;"> <button onclick="startGame()">Start Shopping</button> </div> </div>
+
+    <div id="game-screen" class="hidden">
+        <h2 id="category-title">Category Name</h2>
+        <div id="options-grid" class="grid"></div>
+        <div class="skip-container">
+            <button id="skip-button" class="skip-btn" onclick="selectSkip()">I don't want to buy any of these options</button>
+            <div id="reason-container" class="hidden">
+                <textarea id="skip-reason" class="reason-box" placeholder="Please tell us why..."></textarea>
+            </div>
+        </div>
+        <div class="nav-actions">
+            <button id="prev-button" onclick="prevCategory()" disabled>&larr; Back</button>
+            <button id="next-button" onclick="nextCategory()" disabled>Next Product &rarr;</button>
+        </div>
+    </div>
+
+   <div id="summary-screen" class="hidden">
+    <div class="survey-container">
+        <h1>Final Questions</h1>
+        <p class="subtitle">Thank you for completing the study. Please answer a few final questions.</p>
+
+        <!-- 1. Gender -->
+        <div class="survey-card">
+            <h3>Gender</h3>
+            <div class="options-row">
+                <label><input type="radio" name="gender" value="Male"> Male</label>
+                <label><input type="radio" name="gender" value="Female"> Female</label>
+                <label><input type="radio" name="gender" value="Diverse"> Diverse</label>
+                <label><input type="radio" name="gender" value="Prefer not to say"> Prefer not to say</label>
+            </div>
+        </div>
+
+        <!-- 2. Age -->
+        <div class="survey-card">
+            <h3>Age</h3>
+            <input type="number" id="age" min="18" max="120">
+        </div>
+
+        <!-- 3. Education -->
+        <div class="survey-card">
+            <h3>Highest Educational Qualification</h3>
+            <select id="education">
+                <option value="">Please select</option>
+                <option>Secondary School</option>
+                <option>High School Diploma</option>
+                <option>Vocational Training</option>
+                <option>Bachelor's Degree</option>
+                <option>Master's Degree</option>
+                <option>Doctorate / PhD</option>
+            </select>
+        </div>
+
+ 	<!-- 4. Children -->
+        <div class="survey-card">
+            <h3>Do you have children?</h3>
+            <div class="options-row">
+                <label><input type="radio" name="children" value="No"> No</label>
+                <label><input type="radio" name="children" value="Yes"> Yes</label>
+            </div>
+        </div>
+
+  	<!-- 5. Residence -->
+        <div class="survey-card">
+            <h3>Residence</h3>
+            <div class="options-row">
+                <label><input type="radio" name="residence" value="City"> City</label>
+                <label><input type="radio" name="residence" value="Rural area"> Rural area</label>
+            </div>
+        </div>
+
+
+
+        <!-- 6. Weekly spending -->
+        <div class="survey-card">
+            <h3>Weekly food spending (€)</h3>
+            <input type="number" id="foodbudget" min="0" step="1">
+        </div>
+
+        <!-- 7. Focus -->
+        <div class="survey-card">
+            <h3>What do you focus on most when grocery shopping?</h3>
+            <textarea id="shoppingfocus" rows="3"></textarea>
+        </div>
+
+       
+      
+        <!-- 8. Matching Game -->
+      <div class="survey-card">
+    <h3>Label Knowledge</h3>
+    <p class="hint">Match each label with its correct description.</p>
+    
+    <table class="survey-table">
+        <tr>
+            <th>Label</th>
+            <th>Description</th>
+        </tr>
+        
+        <tr>
+            <td>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Fairtrade_Certification_Mark.svg/1280px-Fairtrade_Certification_Mark.svg.png" alt="Fairtrade" class="badge-img">
+                <br><strong>Fairtrade</strong>
+            </td>
+            <td>
+                <select id="match-fairtrade">
+		    <option value="">Select...</option>
+                   <option value="1">Ensures guaranteed minimum price for workers + additional premium for community invesments. Focus: fair wages, safe working conditions, ban on child labour.</option>
+                    <option value="2">Focus: Ecological, social, and economic aspects of production. Strict rules on fertilisation, animal stocking density, and circular farming. No child labor + requires respect for human rights.</option>
+                    <option value="3">Certifies that at least 95% of ingredients come from organic farming. Prohibits synthetic pesticides, chemical fertilisers, and GMOs. Includes improved animal welfare standards.</option>
+                    <option value="4">Rates food products on their overall environmental impact using 25 indicators. Covers pesticide use, biodiversity, animal welfare, ingredients, farming methods, and transport. </option>
+                    <option value="5">Certifies that food has been grown without synthetic pesticides, chemical fertilisers, or GMOs. Animals must be kept in species-appropriate conditions.</option>
+
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/cf/Bio-Siegel-EG-%C3%96ko-VO-Deutschland.svg" alt="Bio" class="badge-img">
+                <br><strong>Bio</strong>
+            </td>
+            <td>
+                <select id="match-bio">
+                    <option value="">Select...</option>
+                       <option value="1">Ensures guaranteed minimum price for workers + additional premium for community invesments. Focus: fair wages, safe working conditions, ban on child labour.</option>
+                    <option value="2">Focus: Ecological, social, and economic aspects of production. Strict rules on fertilisation, animal stocking density, and circular farming. No child labor + requires respect for human rights.</option>
+                    <option value="3">Certifies that at least 95% of ingredients come from organic farming. Prohibits synthetic pesticides, chemical fertilisers, and GMOs. Includes improved animal welfare standards.</option>
+                    <option value="4">Rates food products on their overall environmental impact using 25 indicators. Covers pesticide use, biodiversity, animal welfare, ingredients, farming methods, and transport. </option>
+                    <option value="5">Certifies that food has been grown without synthetic pesticides, chemical fertilisers, or GMOs. Animals must be kept in species-appropriate conditions.</option>
+
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img src="https://agriculture.ec.europa.eu/sites/default/files/styles/embed_medium/public/2019-06/eu-organic-logo-600x400_0.png?itok=oEqKs6cw" alt="EU-Bio" class="badge-img">
+                <br><strong>EU-Bio</strong>
+            </td>
+            <td>
+                <select id="match-eu-bio">
+                    <option value="">Select...</option>
+                     <option value="1">Ensures guaranteed minimum price for workers + additional premium for community invesments. Focus: fair wages, safe working conditions, ban on child labour.</option>
+                    <option value="2">Focus: Ecological, social, and economic aspects of production. Strict rules on fertilisation, animal stocking density, and circular farming. No child labor + requires respect for human rights.</option>
+                    <option value="3">Certifies that at least 95% of ingredients come from organic farming. Prohibits synthetic pesticides, chemical fertilisers, and GMOs. Includes improved animal welfare standards.</option>
+                    <option value="4">Rates food products on their overall environmental impact using 25 indicators. Covers pesticide use, biodiversity, animal welfare, ingredients, farming methods, and transport. </option>
+                    <option value="5">Certifies that food has been grown without synthetic pesticides, chemical fertilisers, or GMOs. Animals must be kept in species-appropriate conditions.</option>
+
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img src="https://www.naturland.de/images/logo/naturland-logo.svg" alt="Naturland" class="badge-img">
+                <br><strong>Naturland</strong>
+            </td>
+            <td>
+                <select id="match-naturland">
+                    <option value="">Select...</option>
+                     <option value="1">Ensures guaranteed minimum price for workers + additional premium for community invesments. Focus: fair wages, safe working conditions, ban on child labour.</option>
+                    <option value="2">Focus: Ecological, social, and economic aspects of production. Strict rules on fertilisation, animal stocking density, and circular farming. No child labor + requires respect for human rights.</option>
+                    <option value="3">Certifies that at least 95% of ingredients come from organic farming. Prohibits synthetic pesticides, chemical fertilisers, and GMOs. Includes improved animal welfare standards.</option>
+                    <option value="4">Rates food products on their overall environmental impact using 25 indicators. Covers pesticide use, biodiversity, animal welfare, ingredients, farming methods, and transport. </option>
+                    <option value="5">Certifies that food has been grown without synthetic pesticides, chemical fertilisers, or GMOs. Animals must be kept in species-appropriate conditions.</option>
+                </select>
+            </td>
+        </tr>
+
+        <tr>
+            <td>
+                <img src="https://www.wheaty.de/wp-content/themes/wheaty/assets/images/planetscore/AAAA-DE.png" alt="Planet Score" class="badge-img">
+                <br><strong>Planet Score</strong>
+            </td>
+            <td>
+                <select id="match-planet">
+                    <option value="">Select...</option>
+                    <option value="1">Ensures guaranteed minimum price for workers + additional premium for community invesments. Focus: fair wages, safe working conditions, ban on child labour.</option>
+                    <option value="2">Focus: Ecological, social, and economic aspects of production. Strict rules on fertilisation, animal stocking density, and circular farming. No child labor + requires respect for human rights.</option>
+                    <option value="3">Certifies that at least 95% of ingredients come from organic farming. Prohibits synthetic pesticides, chemical fertilisers, and GMOs. Includes improved animal welfare standards.</option>
+                    <option value="4">Rates food products on their overall environmental impact using 25 indicators. Covers pesticide use, biodiversity, animal welfare, ingredients, farming methods, and transport. </option>
+                    <option value="5">Certifies that food has been grown without synthetic pesticides, chemical fertilisers, or GMOs. Animals must be kept in species-appropriate conditions.</option>
+
+                </select>
+            </td>
+        </tr>
+    </table>
+</div>
+
+        <div class="survey-footer">
+            <button onclick="submitSurvey()">Submit</button>
+		
+        </div>
+    </div>
+</div>
+
+<script>
+
+ // --- 1. GLOBALE VARIABLEN & GRUPPE ---
+let userGroup = Math.random() < 0.5 ? 'control' : 'planetInfo';
+let currentStep = 0;
+let history = []; 
+
+// --- 2. HILFSFUNKTIONEN ---
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
+function renderLabelBadges(labelsArray) {
+    return labelsArray.map(l => `<span class="badge-simple">${l}</span>`).join(' ');
+}
+
+// --- 3. GAMEDATA ---
+const gameData = [
+  { 
+
+id: "Round_01",        
+options: [
+            { letter: 'A', price: 1.49, labels: ['Kein Label'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/Screenshot%202026-06-22%20140020.jpg?raw=true' },
+            { letter: 'B', price: 2.09, labels: ['Fairtrade'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(2).jpeg?raw=true' },
+            { letter: 'C', price: 2.69, labels: ['Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(3).jpeg?raw=true' },
+            { letter: 'D', price: 3.29, labels: ['EU-Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(1).jpeg?raw=true' },
+            { letter: 'E', price: 3.89, labels: ['Naturland'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(5).jpeg?raw=true' },
+            { letter: 'F', price: 4.49, labels: ['PlanetScore A'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(2).jpeg?raw=true' }
+        ] 
+    },
+    { 
+        
+id: "Round_02",
+options: [
+            { letter: 'A', price: 1.49, labels: ['Kein Label'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/Screenshot%202026-06-22%20140020.jpg?raw=true' },
+            { letter: 'B', price: 1.49, labels: ['Kontrolle'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07.jpeg?raw=true' },
+            
+        ] 
+    },
+    { 
+        
+id: "Round_03",
+options: [
+            { letter: 'A', price: 1.49, labels: ['Kein Label'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/Screenshot%202026-06-22%20140020.jpg?raw=true' },
+            { letter: 'B', price: 2.19, labels: ['Fairtrade + EU-Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(3).jpeg?raw=true' },
+            { letter: 'C', price: 2.69, labels: ['Fairtrade + Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(5).jpeg?raw=true' },
+            { letter: 'D', price: 3.19, labels: ['Fairtrade + EU-Bio + Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(4).jpeg?raw=true' },
+            { letter: 'E', price: 3.79, labels: ['Fairtrade + Naturland + EU-Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(9).jpeg?raw=true' },
+            { letter: 'F', price: 3.99, labels: ['PlanetScore A'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(2).jpeg?raw=true' }
+        ] 
+    },
+    { 
+        
+id: "Round_04",
+options: [
+            { letter: 'A', price: 1.49, labels: ['Kein Label'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/Screenshot%202026-06-22%20140020.jpg?raw=true' },
+            { letter: 'B', price: 2.09, labels: ['EU-Bio + Naturland'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(7).jpeg?raw=true' },
+            { letter: 'C', price: 2.49, labels: ['Naturland + Fairtrade'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(6).jpeg?raw=true' },
+            { letter: 'D', price: 2.89, labels: ['Bio + Naturland'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(4).jpeg?raw=true' },
+            { letter: 'E', price: 3.29, labels: ['Alle 4 Labels'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08.jpeg?raw=true' },
+            { letter: 'F', price: 3.49, labels: ['PlanetScore A'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(2).jpeg?raw=true' }
+        ] 
+    },
+    { 
+        
+id: "Round_05",
+options: [
+            { letter: 'A', price: 1.49, labels: ['Kein Label'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/Screenshot%202026-06-22%20140020.jpg?raw=true' },
+            { letter: 'B', price: 1.99, labels: ['Fairtrade + EU-Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(3).jpeg?raw=true' },
+            { letter: 'C', price: 2.29, labels: ['Fairtrade + Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(5).jpeg?raw=true' },
+            { letter: 'D', price: 2.59, labels: ['EU-Bio + Naturland'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(7).jpeg?raw=true' },
+            { letter: 'E', price: 2.79, labels: ['Bio + Naturland'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(4).jpeg?raw=true' },
+            { letter: 'F', price: 2.99, labels: ['PlanetScore E'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/PSE.jpg?raw=true' }
+        ] 
+    },
+    { 
+        
+id: "Round_06",
+options: [
+            { letter: 'A', price: 1.49, labels: ['Kein Label'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/Screenshot%202026-06-22%20140020.jpg?raw=true' },
+            { letter: 'B', price: 1.79, labels: ['Fairtrade'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.07%20(2).jpeg?raw=true' },
+            { letter: 'C', price: 1.99, labels: ['Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(3).jpeg?raw=true' },
+            { letter: 'D', price: 2.19, labels: ['EU-Bio'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(1).jpeg?raw=true' },
+            { letter: 'E', price: 2.39, labels: ['Naturland'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/WhatsApp%20Image%202026-06-21%20at%2020.59.08%20(5).jpeg?raw=true' },
+            { letter: 'F', price: 2.49, labels: ['PlanetScoreE'], image: 'https://github.com/ClimpACTtum/SchokoStudie/raw/main/PSE.jpg?raw=true' }
+        ] 
+    }
+];
+
+
+// --- 4. START-LOGIK ---
+
+function showPlanetScoreInfo() {
+    const infoText = `
+        <div style="text-align: left; max-width: 600px; margin: 0 auto;">
+            <h3>What is the PlanetScore?</h3>
+            <p>The Planet Score is a science-based environmental scoring system for food products. It assesses the environmental impact of a product across 25 indicators, covering the entire production chain — including ingredients, farming methods, energy use, packaging, and transport.</p>
+	    <p> Products are scored from A (lowest impact) to E (highest impact) across four dimensions:</p>
+        	<ul style="margin-top: 10px; margin-bottom: 20px; padding-left: 20px;">
+		<li><strong>Pesticide use: </strong>  type and quantity of synthetic pesticides used during cultivation and storage </li>
+		<li><strong>Biodiversity:</strong> Assesses impacts such as deforestation, GMO use, water and air pollution, and land use competition</li>
+		<li><strong>Climate impact:</strong>Evaluates greenhouse gas emissions, including CO₂, methane, and nitrous oxide, as well as contributions to deforestation</li>
+		<li><strong>Animal welfare</strong> Examines housing conditions, outdoor access, stocking density, and farming practices</li>
+		</ul>
+	     <p>The methodology is independent and transparent, developed by scientists and subject matter experts. It is not affiliated with any commercial brand or industry association.</p>
+            <div style="text-align: center; margin-top: 30px;">
+                <button onclick="startActualGame()">Start Shopping</button>
+            </div>
+        </div>`;
+    document.getElementById('intro-screen').innerHTML = infoText;
+}
+
+function startActualGame() {
+    document.getElementById('intro-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    loadCategory();
+}
+
+function startGame() {
+    if (userGroup === 'planetInfo') {
+        showPlanetScoreInfo();
+    } else {
+        startActualGame();
+    }
+}
+
+// --- 5. SPIELFUNKTIONEN ---
+function loadCategory() {
+    const data = gameData[currentStep];
+    document.getElementById('category-title').innerText = "Round " + (currentStep + 1);
+    const grid = document.getElementById('options-grid');
+    grid.innerHTML = '';
+    
+    data.options.forEach(opt => {
+        const card = document.createElement('div');
+        card.className = 'option-card';
+        card.id = `opt-${opt.letter}`;
+        card.onclick = () => selectOption(opt);
+        card.innerHTML = `
+            <div class="option-letter">${opt.letter}</div>
+    	    <img class="product-img" src="${opt.image}" onclick="openModal('${opt.image}')" style="cursor: zoom-in;"> 
+            <div class="card-body">
+        <div class="price">${opt.price.toFixed(2)} €</div>
+        <div class="labels-container"></div> 
+    </div>`;;
+        grid.appendChild(card);
+    });
+    document.getElementById('next-button').disabled = true;
+    document.getElementById('prev-button').disabled = (currentStep === 0);
+}
+
+function selectOption(opt) {
+    window.tempSelection = { type: 'buy', price: opt.price, letter: opt.letter, labels: opt.labels };
+    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById(`opt-${opt.letter}`).classList.add('selected');
+    document.getElementById('next-button').disabled = false;
+}
+
+function selectSkip() {
+    window.tempSelection = { type: 'skip' };
+    document.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('reason-container').classList.remove('hidden');
+    document.getElementById('next-button').disabled = false;
+}
+
+function nextCategory() {
+    const roundId = gameData[currentStep].id;
+    history.push({ ...window.tempSelection, round: roundId });
+    currentStep++;
+    if (currentStep < gameData.length) loadCategory();
+    else showSummary();
+}
+
+// --- 6. ENDE & FORMSPREE ---
+function showSummary() {
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('summary-screen').classList.remove('hidden');
+}
+
+function submitSurvey() {
+    const surveyData = {
+        gender: document.querySelector('input[name="gender"]:checked')?.value || 'Not selected',
+        age: document.getElementById('age').value,
+        education: document.getElementById('education').value,
+        children: document.querySelector('input[name="children"]:checked')?.value || 'Not selected',
+        residence: document.querySelector('input[name="residence"]:checked')?.value || 'Not selected',
+        foodbudget: document.getElementById('foodbudget').value,
+        shoppingfocus: document.getElementById('shoppingfocus').value,
+        matches: {
+            fairtrade: document.getElementById('match-fairtrade')?.value || '',
+            bio: document.getElementById('match-bio')?.value || '',
+            euBio: document.getElementById('match-eu-bio')?.value || '',
+            naturland: document.getElementById('match-naturland')?.value || '',
+            planet: document.getElementById('match-planet')?.value || ''
+        }
+    };
+
+   let sortedDecisions = new Array(6).fill(null);
+    
+   history.forEach(d => {
+        let index = parseInt(d.round.replace('Round_', '')) - 1;
+        if (index >= 0 && index < 6) {
+            sortedDecisions[index] = d;
+        }
+    });
+
+    const finalData = {
+        group: userGroup,
+        decisions: sortedDecisions,
+        survey: surveyData
+    };
+    fetch('https://script.google.com/macros/s/AKfycbzVBbZUQgd1KU7mG9I-0-8F94i73DtwHVgNrXROpXQ5v9i2Am-qKf3hetvxDif_I3uu7w/exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(finalData)
+}).then(response => response.json())
+  .then(data => {
+      console.log('Answer from server:', data);       
+alert("Thank you! Your answers have been saved");
+      document.getElementById('summary-screen').innerHTML = "<h1>Thank you!</h1>";
+  })
+  .catch(error => {
+      console.error('Error:', error);
+      alert("There was an error sending the results. Please try again.");
+  });
+}
+    
+    function openModal(imgSrc) {
+    document.getElementById('fullImg').src = imgSrc;
+    document.getElementById('imageModal').style.display = 'block';
+}
+
+// Mischen beim Laden
+document.addEventListener("DOMContentLoaded", () => {
+    shuffleArray(gameData);
+    gameData.forEach(cat => cat.options = shuffleArray(cat.options));
+});
+</script>
+
+   	<div id="imageModal" class="modal" onclick="this.style.display='none'">
+    <img class="modal-content" id="fullImg">
+</div>
+</body>
+</html>  
+        
